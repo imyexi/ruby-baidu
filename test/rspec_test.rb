@@ -1,5 +1,5 @@
 #coding:UTF-8
-require 'baidu'
+require '../lib/baidu.rb'
 describe "Baidu Query" do
     baidu = Baidu.new
     page = baidu.query '百度'
@@ -10,6 +10,10 @@ describe "Baidu Query" do
     
     it "should return 100,000,000" do
         page.how_many.should == 100000000
+    end
+    
+    it "should return integer and less than 11" do
+        page.rank('www.baidu.com').should < 11
     end
     
     it "should return BaiduResult" do

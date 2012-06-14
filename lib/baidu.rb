@@ -112,7 +112,7 @@ class BaiduResult
     #look up a word and get the rank of a uri with $host
     def rank(host)#on base of ranks
         ranks.each_with_index do |uri,index|
-            index+1 if URI.parse(URI.encode(uri)).host == host
+            return index+1 if URI.parse(URI.encode(uri)).host == host
         end
     end
 
