@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 s.name 			= %q{baidu}
-s.version 		= '1.0.0'
+s.version 		= '1.0.2'
 s.authors 		= ["seoaqua"]
 s.date 			= %q{2012-06-13}
 s.description 	= %q{to get keyword ranking,related queries and popularity from baidu.com. this is built by a newbie, so please be careful. welcome to check my homepage, http://seoaqua.com}

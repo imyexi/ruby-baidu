@@ -114,6 +114,7 @@ class BaiduResult
         ranks.each_with_index do |uri,index|
             return index+1 if URI.parse(URI.encode(uri)).host == host
         end
+        return nil
     end
 
     def how_many
