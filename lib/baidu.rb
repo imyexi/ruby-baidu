@@ -106,13 +106,15 @@ class BaiduResult
     end
     
     def ranks
-        @ranks ||= @page.search("//table[@class=\"result\"]").map{|table|@page.search("//table[@id=\"#{table['id']}\"]//a").first['href'] }
+        @ranks ||= @page.search("//table[@class=\"result\"]").map{|table|@page.search("//table[@id=\"#{table['id']}\"]//span[@class=\"g\"]").first}.map{|rank|rank.text unless rank.nil?}
     end
     
     #look up a word and get the rank of a uri with $host
     def rank(host)#on base of ranks
         ranks.each_with_index do |uri,index|
-            return index+1 if URI.parse(URI.encode(uri)).host == host
+            next if uri.nil?
+            return index+1 if uri.split('/')[0].strip == host
+            #return index+1 if URI.parse(URI.encode(uri)).host == host
         end
         return nil
     end
