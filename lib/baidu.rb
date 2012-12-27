@@ -106,20 +106,47 @@ class BaiduResult
     end
     
     def ranks(host=nil)
-        @ranks ||= @page.search("//table[@class=\"result\"]").map{|table|@page.search("//table[@id=\"#{table['id']}\"]//span[@class=\"g\"]").first}.map{|rank|URI('http://'+rank.text.strip.split(/\s/).first).host unless rank.nil?}
+        return @ranks unless @ranks.nil?
+        @ranks = Hash.new
+        @page.search("//table[@class=\"result\"]").each do |table|
+            id = table['id']
+            @ranks[id] = Hash.new
+            url = @page.search("//table[@id=\"#{table['id']}\"]//span[@class=\"g\"]").first
+            a = @page.search("//table[@id=\"#{table['id']}\"]//h3/a")
+            @ranks[id]['text'] = a.text
+            @ranks[id]['href'] = a.first['href'].sub('http://www.baidu.com/link?url=','').strip
+            unless url.nil?
+                url = url.text.strip
+                @ranks[id]['host'] = URI(URI.encode("http://#{url}")).host
+            else
+                @ranks[id]['host'] = nil
+            end
+        end
+        #@page.search("//table[@class=\"result\"]").map{|table|@page.search("//table[@id=\"#{table['id']}\"]//span[@class=\"g\"]").first}.map{|rank|URI(URI.encode('http://'+rank.text.strip)).host unless rank.nil?}
         if host.nil?
             @ranks
         else
-            @ranks.each_with_index.map{|h,i| i if !h.nil? and h==host}.compact
+            host_ranks = Hash.new
+            @ranks.each do |id,line|
+                if host.class == Regexp
+                    host_ranks[id] = line if line['host'] =~ host
+                elsif host.class == String
+                    host_ranks[id] = line if line['host'] == host
+                end
+            end
+            host_ranks
+            #'not finished'#@ranks.each_with_index.map{|h,i| i if !h.nil? and h==host}.compact
         end
     end
     
-    #look up a word and get the rank of a uri with $host
+    #return the top rank number from @ranks with the input host
     def rank(host)#on base of ranks
-        ranks.each_with_index do |uri,index|
-            next if uri.nil?
-            return index+1 if uri.split('/')[0].strip == host
-            #return index+1 if URI.parse(URI.encode(uri)).host == host
+        ranks.each do |id,line|
+            if host.class == Regexp
+                return id if line['host'] =~ host
+            elsif host.class == String
+                return id if line['host'] == host
+            end
         end
         return nil
     end
