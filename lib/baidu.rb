@@ -117,7 +117,7 @@ class BaiduResult
             @ranks[id]['href'] = a.first['href'].sub('http://www.baidu.com/link?url=','').strip
             unless url.nil?
                 url = url.text.strip
-                @ranks[id]['host'] = URI(URI.encode("http://#{url}")).host
+                @ranks[id]['host'] = Addressable::URI.parse(URI.encode("http://#{url}")).host
             else
                 @ranks[id]['host'] = nil
             end
