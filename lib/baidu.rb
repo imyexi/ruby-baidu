@@ -2,7 +2,7 @@
 require 'rubygems'
 require 'mechanize'
 require 'json'
-require 'uri'
+require 'addressable/uri'
 class Baidu
     BaseUri = 'http://www.baidu.com/s?'
     PerPage = 100
@@ -18,6 +18,12 @@ class Baidu
         json = @a.get("http://suggestion.baidu.com/su?wd=#{URI.encode(wd)}&cb=callback").body.force_encoding('GBK').encode("UTF-8")
         m = /\[([^\]]*)\]/.match json
         return JSON.parse m[0]
+    end
+    #to find out the real url for something lik 'www.baidu.com/link?url=7yoYGJqjJ4zBBpC8yDF8xDhctimd_UkfF8AVaJRPKduy2ypxVG18aRB5L6D558y3MjT_Ko0nqFgkMoS'
+    def url(id)
+      a = Mechanize.new
+      a.redirect_ok=false
+      return a.get("http://www.baidu.com/link?url=#{id}").header['location']
     end
 
 =begin
@@ -162,4 +168,5 @@ class BaiduResult
     def next
         @page = BaiduResult.new(Mechanize.new.click(@page.link_with(:text=>/下一页/))) unless @page.link_with(:text=>/下一页/).nil?
     end
+    
 end
