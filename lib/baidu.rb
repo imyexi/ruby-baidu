@@ -23,7 +23,7 @@ class Baidu
     def url(id)
       a = Mechanize.new
       a.redirect_ok=false
-      return a.get("http://www.baidu.com/link?url=#{id}").header['location']
+      return a.head("http://www.baidu.com/link?url=#{id}").header['location']
     end
 
 =begin
