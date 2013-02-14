@@ -58,6 +58,11 @@ class Qihoo
             return false
         end
     end
+    #是否收录
+    def indexed?(url)
+        URI(url)
+        query(url).has_result?
+    end
 end
 
 class QihooResult < SearchResult
@@ -90,7 +95,10 @@ class QihooResult < SearchResult
         return QihooResult.new(next_body,next_href,@pagenumber+1)
         #@page = MbaiduResult.new(Mechanize.new.click(@page.link_with(:text=>/下一页/))) unless @page.link_with(:text=>/下一页/).nil?
     end
-    
+    #有结果
+    def has_result?
+        !@body.xpath('//div[@id="main"]/h3').text().include?'没有找到该URL'
+    end
 end
 
 class Mbaidu
@@ -273,12 +281,6 @@ class Baidu
 =end
     end
 
-=begin
-    def maxpage
-        @maxpage ||= (how_many / PerPage.to_f).round
-    end
-=end
-
     #site:xxx.yyy.com
     def how_many_pages(host)
         query("site:#{host}").how_many
@@ -292,6 +294,10 @@ class Baidu
     #site:xxx.yyy.com inurl:zzz
     def how_many_pages_with(host,string)
         query("site:#{host} inurl:#{string}").how_many
+    end
+    #是否收录
+    def indexed?(url)
+        query(url).has_result?
     end
 
 =begin
@@ -354,6 +360,10 @@ class BaiduResult < SearchResult
     
     def next
         @page = BaiduResult.new(Mechanize.new.click(@page.link_with(:text=>/下一页/))) unless @page.link_with(:text=>/下一页/).nil?
+    end
+
+    def has_result?
+        @page.search('//div[@class="nors"]').empty?
     end
     
 end
