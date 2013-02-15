@@ -80,13 +80,15 @@ class QihooResult < SearchResult
             href = a['href']
             url = url.first.text
             host = Addressable::URI.parse(URI.encode("http://#{url}")).host
-            @ranks[id] = {'href'=>"http://so.com#{href}",'text'=>text,'host'=>host}
+            @ranks[id.to_s] = {'href'=>"http://so.com#{href}",'text'=>text,'host'=>host}
         end
         @ranks
     end
     #下一页
     def next
-        next_href = @body.xpath('//a[@id="snext"]').first['href']
+        next_href = @body.xpath('//a[@id="snext"]')
+        return false if next_href.empty?
+        next_href = next_href.first['href']
         next_href = URI.join(@baseuri,next_href).to_s
         # next_href = URI.join("http://#{@host}",next_href).to_s
         next_body = HTTParty.get(next_href).body
@@ -169,7 +171,7 @@ class MbaiduResult < SearchResult
             end
 =end
 
-            @ranks[id] = {'href'=>href,'text'=>text,'is_mobile'=>is_mobile,'host'=>host.sub(/\u00A0/,'')}
+            @ranks[id.to_s] = {'href'=>href,'text'=>text,'is_mobile'=>is_mobile,'host'=>host.sub(/\u00A0/,'')}
         end
         @ranks
     end
