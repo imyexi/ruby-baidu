@@ -4,7 +4,14 @@ require 'nokogiri'
 require 'json'
 require 'addressable/uri'
 require 'httparty'
-
+class SearchEngine
+   #是否收录
+    def indexed?(url)
+        URI(url)
+        result = query(url)
+        return result.has_result?
+    end 
+end
 class SearchResult
     def initialize(body,baseuri,pagenumber=nil)
         @body = Nokogiri::HTML body
@@ -42,7 +49,7 @@ class SearchResult
         return nil
     end
 end
-class Qihoo 
+class Qihoo < SearchEngine
     Host = 'www.so.com'
     #基本查询, 相当于在搜索框直接数据关键词查询
     def query(wd)
@@ -58,11 +65,7 @@ class Qihoo
             return false
         end
     end
-    #是否收录
-    def indexed?(url)
-        URI(url)
-        query(url).has_result?
-    end
+
 end
 
 class QihooResult < SearchResult
@@ -101,7 +104,7 @@ class QihooResult < SearchResult
     end
 end
 
-class Mbaidu
+class Mbaidu < SearchEngine
     BaseUri = 'http://m.baidu.com/s?'
     headers = {
         "User-Agent" => 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3_2 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8H7 Safari/6533.18.5'
@@ -210,7 +213,7 @@ class MbaiduResult < SearchResult
     end
 
 end
-class Baidu
+class Baidu < SearchEngine
     BaseUri = 'http://www.baidu.com/s?'
     PerPage = 100
 
@@ -266,7 +269,7 @@ class Baidu
             @page = @a.get uri
             BaiduResult.new(@page)
         rescue Net::HTTP::Persistent::Error
-            warn "#{uri}timeout"
+            warn "[timeout] #{uri}"
             return false
         end
 =begin
@@ -294,10 +297,6 @@ class Baidu
     #site:xxx.yyy.com inurl:zzz
     def how_many_pages_with(host,string)
         query("site:#{host} inurl:#{string}").how_many
-    end
-    #是否收录
-    def indexed?(url)
-        query(url).has_result?
     end
 
 =begin
