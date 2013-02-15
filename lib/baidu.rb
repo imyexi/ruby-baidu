@@ -141,7 +141,7 @@ class MbaiduResult < SearchResult
             href,text,host,is_mobile = '','','',false
             a = result.search("a").first
             is_mobile = true unless a.search("img").empty?
-            host = result.search('span[@class="site"]').first.text
+            host = result.search('[@class="site"]').first.text
             href = a['href']
             text = a.text
             id = href.scan(/&order=(\d+)&/)
