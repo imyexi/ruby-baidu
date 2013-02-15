@@ -49,23 +49,18 @@ class SearchResult
         return nil
     end
 end
+
 class Qihoo < SearchEngine
     Host = 'www.so.com'
     #基本查询, 相当于在搜索框直接数据关键词查询
     def query(wd)
-        begin
-            #用原始路径请求
-            uri = URI.encode(URI.join("http://#{Host}/",'s?q='+wd).to_s)
-            body = HTTParty.get(uri)
-            #如果请求地址被跳转,重新获取当前页的URI
-            uri = URI.join("http://#{Host}/",body.request.path).to_s
-            return QihooResult.new(body,uri)
-        rescue Exception => e
-            warn "#{uri} fetch error: #{e.to_s}"
-            return false
-        end
+        #用原始路径请求
+        uri = URI.join("http://#{Host}/",URI.encode('s?q='+wd)).to_s
+        body = HTTParty.get(uri)
+        #如果请求地址被跳转,重新获取当前页的URI,可避免翻页错误
+        uri = URI.join("http://#{Host}/",body.request.path).to_s
+        QihooResult.new(body,uri)
     end
-
 end
 
 class QihooResult < SearchResult
