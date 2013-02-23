@@ -332,6 +332,18 @@ class BaiduResult < SearchResult
         #@page.search("//table[@class=\"result\"]").map{|table|@page.search("//table[@id=\"#{table['id']}\"]//span[@class=\"g\"]").first}.map{|rank|URI(URI.encode('http://'+rank.text.strip)).host unless rank.nil?}
         @ranks
     end
+
+    def ads
+        return @ads unless @ads.nil?
+        @ads = []
+        @page.search("//table").each do |table|
+            id = table['id'].to_i
+            next unless id > 3000
+            url = @page.search("//table[@id='#{id}']//font[@size='-1' and @color='#008000']").first.content
+            @ads << {:id => id, :url => url}
+        end
+        @ads
+    end
     
     #return the top rank number from @ranks with the input host
     # def rank(host)#on base of ranks
