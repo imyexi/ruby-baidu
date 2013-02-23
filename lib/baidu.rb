@@ -4,7 +4,14 @@ require 'nokogiri'
 require 'json'
 require 'addressable/uri'
 require 'httparty'
-
+class SearchEngine
+   #是否收录
+    def indexed?(url)
+        URI(url)
+        result = query(url)
+        return result.has_result?
+    end 
+end
 class SearchResult
     def initialize(body,baseuri,pagenumber=nil)
         @body = Nokogiri::HTML body
@@ -42,21 +49,17 @@ class SearchResult
         return nil
     end
 end
-class Qihoo 
+
+class Qihoo < SearchEngine
     Host = 'www.so.com'
     #基本查询, 相当于在搜索框直接数据关键词查询
     def query(wd)
-        begin
-            #用原始路径请求
-            uri = URI.encode(URI.join("http://#{Host}/",'s?q='+wd).to_s)
-            body = HTTParty.get(uri)
-            #如果请求地址被跳转,重新获取当前页的URI
-            uri = URI.join("http://#{Host}/",body.request.path).to_s
-            return QihooResult.new(body,uri)
-        rescue Exception => e
-            warn "#{uri} fetch error: #{e.to_s}"
-            return false
-        end
+        #用原始路径请求
+        uri = URI.join("http://#{Host}/",URI.encode('s?q='+wd)).to_s
+        body = HTTParty.get(uri)
+        #如果请求地址被跳转,重新获取当前页的URI,可避免翻页错误
+        uri = URI.join("http://#{Host}/",body.request.path).to_s
+        QihooResult.new(body,uri)
     end
 end
 
@@ -77,23 +80,28 @@ class QihooResult < SearchResult
             href = a['href']
             url = url.first.text
             host = Addressable::URI.parse(URI.encode("http://#{url}")).host
-            @ranks[id] = {'href'=>"http://so.com#{href}",'text'=>text,'host'=>host}
+            @ranks[id.to_s] = {'href'=>"http://so.com#{href}",'text'=>text,'host'=>host}
         end
         @ranks
     end
     #下一页
     def next
-        next_href = @body.xpath('//a[@id="snext"]').first['href']
+        next_href = @body.xpath('//a[@id="snext"]')
+        return false if next_href.empty?
+        next_href = next_href.first['href']
         next_href = URI.join(@baseuri,next_href).to_s
         # next_href = URI.join("http://#{@host}",next_href).to_s
         next_body = HTTParty.get(next_href).body
         return QihooResult.new(next_body,next_href,@pagenumber+1)
         #@page = MbaiduResult.new(Mechanize.new.click(@page.link_with(:text=>/下一页/))) unless @page.link_with(:text=>/下一页/).nil?
     end
-    
+    #有结果
+    def has_result?
+        !@body.xpath('//div[@id="main"]/h3').text().include?'没有找到该URL'
+    end
 end
 
-class Mbaidu
+class Mbaidu < SearchEngine
     BaseUri = 'http://m.baidu.com/s?'
     headers = {
         "User-Agent" => 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_3_2 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8H7 Safari/6533.18.5'
@@ -133,7 +141,7 @@ class MbaiduResult < SearchResult
             href,text,host,is_mobile = '','','',false
             a = result.search("a").first
             is_mobile = true unless a.search("img").empty?
-            host = result.search('span[@class="site"]').first.text
+            host = result.search('[@class="site"]').first.text
             href = a['href']
             text = a.text
             id = href.scan(/&order=(\d+)&/)
@@ -163,7 +171,7 @@ class MbaiduResult < SearchResult
             end
 =end
 
-            @ranks[id] = {'href'=>href,'text'=>text,'is_mobile'=>is_mobile,'host'=>host.sub(/\u00A0/,'')}
+            @ranks[id.to_s] = {'href'=>href,'text'=>text,'is_mobile'=>is_mobile,'host'=>host.sub(/\u00A0/,'')}
         end
         @ranks
     end
@@ -202,7 +210,7 @@ class MbaiduResult < SearchResult
     end
 
 end
-class Baidu
+class Baidu < SearchEngine
     BaseUri = 'http://www.baidu.com/s?'
     PerPage = 100
 
@@ -258,7 +266,7 @@ class Baidu
             @page = @a.get uri
             BaiduResult.new(@page)
         rescue Net::HTTP::Persistent::Error
-            warn "#{uri}timeout"
+            warn "[timeout] #{uri}"
             return false
         end
 =begin
@@ -272,12 +280,6 @@ class Baidu
         @currpage =0
 =end
     end
-
-=begin
-    def maxpage
-        @maxpage ||= (how_many / PerPage.to_f).round
-    end
-=end
 
     #site:xxx.yyy.com
     def how_many_pages(host)
@@ -354,6 +356,10 @@ class BaiduResult < SearchResult
     
     def next
         @page = BaiduResult.new(Mechanize.new.click(@page.link_with(:text=>/下一页/))) unless @page.link_with(:text=>/下一页/).nil?
+    end
+
+    def has_result?
+        @page.search('//div[@class="nors"]').empty?
     end
     
 end
