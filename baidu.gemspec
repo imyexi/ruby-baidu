@@ -8,4 +8,8 @@ s.email 		= %q{seoaqua@qq.com}
 s.files			=["lib/baidu.rb"]
 s.homepage 		= %q{https://github.com/seoaqua/ruby-baidu}
 s.summary = s.description
+s.add_runtime_dependency 'nokogiri'
+s.add_runtime_dependency 'mechanize'
+s.add_runtime_dependency 'addressable'
+s.add_runtime_dependency 'httparty'
 end
